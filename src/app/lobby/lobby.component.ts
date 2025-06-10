@@ -20,10 +20,10 @@ export class LobbyComponent {
     ) {}
 
      ngOnInit(): void {
-    // gameId aus der URL holen
+    
     const gameId = this.route.snapshot.paramMap.get('id');
     if (!gameId) {
-      console.warn('Keine Game-ID gefunden');
+      console.warn('No Game-ID found');
       this.router.navigate(['/']);
       return;
     }
