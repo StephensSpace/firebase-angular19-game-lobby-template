@@ -7,6 +7,10 @@
  * This class serves as a template for the basic game setup – for example game options,
  * flags, or player information – that can be configured in the lobby by players before 
  * the game starts and later used by the game logic.
+ * 
+ * NOTE: If you decide to rename this class for any reason, 
+ * please remember to update the corresponding data types in the Firebase Service and Lobby components,
+ * to avoid TypeScript type errors.
  */
 export class Game {
     players: { name: string; Color: string; score: number }[] = [];

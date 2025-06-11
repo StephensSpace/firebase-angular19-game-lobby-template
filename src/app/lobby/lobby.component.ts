@@ -39,6 +39,5 @@ export class LobbyComponent {
     if (this.unsubscribeFn) {
       this.unsubscribeFn(); // sauber vom Listener abmelden beim Verlassen der Komponente
     }
-  }
-    
+  }  
 }
