@@ -1,1 +1,63 @@
-<p>lobby works!</p>
+<!--
+ * Game Lobby Template
+ *
+ * This template renders the list of players with name input fields and ready buttons,
+ * plus the overall game state and the start button. You can add whatever you want inside the 
+ * for loop. By using the currentPlayerIndex you can fix each new input to the owning user.
+ * I recommend using the given Game/Player class to add options/settings you want to be changeable.
+ * If you add more subcollections, you will have to add the observables to use them in the template.
+ *
+ * NOTES:
+ * - The players$ observable is used with the async pipe to get the current player list.
+ * - The game$ observable is used similarly to get game metadata like readiness.
+ * - You can easily add custom inputs or options inside the player loop (e.g. player-specific settings)
+ *   or in the game container (e.g. game-wide settings).
+ * - The `currentPlayerIndex` is crucial for controlling which player can edit their name and toggle ready.
+ *   Only the current player can interact with their input and button.
+ * - The Start button is enabled only for player 0 (host) and only when all players are ready.
+ *   You might want to customize who can start the game or add additional conditions here.
+ * - At the moment, Player name changes will only be submitted by BLUR not by pressing Enter
+ *
+ * SIDE NOTE:
+ * - I used ngModel and ngModelChange here instead of reactive forms. This decision was made
+ *   due to the low complexity of the current form state rendered in the for loop.
+ *
+-->
+
+
+<h1>Game Lobby</h1>
+
+
+<app-overlay-url *ngIf="overlayVisible" [gameId]="ID" (close)="toggleOverlay()">
+</app-overlay-url>
+
+<div *ngIf="players$ | async as players">
+  <div *ngFor="let p of players; let i = index">
+    <input type="text" class="standartklasse" [disabled]="i !== currentPlayerIndex"
+      [readonly]="i !== currentPlayerIndex" [ngModel]="i === currentPlayerIndex ? localNames[i] : p?.name"
+      (ngModelChange)="
+        i === currentPlayerIndex
+          ? localNames[i] = $event
+          : (p && p.id ? onNameChange($event, i, p.id) : null)
+      " (blur)="i === currentPlayerIndex ? saveName(i, p?.id) : null" /> <!-- NOTE: Blur is used to trigger save. You can add other status changes like keydown.enter here -->
+    <button (click)="toggleReady(p)"
+      [ngClass]="{ 'active': currentPlayerIndex === i, 'deactivated': currentPlayerIndex !== i }">
+      Ready
+    </button>
+    <img src="/greenCheck.png" class="checkReady" *ngIf="p?.ready">
+  </div>
+</div>
+
+<ng-container *ngIf="(game$ | async) as game;"> <!-- NOTE: Change 'currentPlayerIndex === 0' here to control who can start the game -->
+  <button [ngClass]="{
+    'active': currentPlayerIndex === 0 && game.allPlayersReady, 
+    'deactivated': currentPlayerIndex !== 0 || !game.allPlayersReady
+  }"
+  (click)="startGame()">
+    Start
+  </button> 
+</ng-container>
+
+<ng-container *ngIf="gameStart"> <!-- NOTE: only for Showcase purpose so you see the Lobby starts. -->
+  <p>Game starting! Now Route to your Game Component</p>
+</ng-container>

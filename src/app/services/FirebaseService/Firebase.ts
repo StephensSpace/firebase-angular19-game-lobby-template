@@ -1,5 +1,7 @@
 /**
  * This service uses Angular Firestore to fetch and save data from Firestore.
+ * It will provide you every functionality you need to create your Lobby and
+ * recieve, update and render your Game data from Firestore.
  * 
  * Key points:
  * - `collectionData` and `docData` return Observable streams that auto-update
@@ -12,8 +14,11 @@
  * - Firestore calls should run inside Angular Zones to avoid warnings.
  *   These warnings are annoying but don’t break functionality.
  *   This topic is well documented and manageable with AngularFire.
+ * 
+ * Important note: In Angular 16+, it's recommended **not** to initialize Firebase here.
+ * The setup and initialization should instead happen in `app.config.ts`.
  */
- 
+
 import { Injectable } from '@angular/core';
 import { Firestore, collectionData, docData } from '@angular/fire/firestore';
 import {
@@ -29,12 +34,7 @@ import { Game } from '../../models/game';
 import { Player } from '../../models/player';
 import { GameWithPlayers } from '../../models/GameWithPlayers';
 import { Observable, map } from 'rxjs';
-/**
- * The FirebaseService provides the two basic methods needed by the Home and Lobby components.
- * 
- * Important note: In Angular 16+, it's recommended **not** to initialize Firebase here.
- * The setup and initialization should instead happen in `app.config.ts`.
- */
+
 @Injectable({
   providedIn: 'root'
 })
@@ -42,6 +42,7 @@ export class FirebaseService {
   constructor(
     private firestore: Firestore
   ) { }
+
   /**
    * Creates a new instance of the Game object and adds it to the Firestore 'Games' collection.
    * 
@@ -61,13 +62,13 @@ export class FirebaseService {
    */
   async createLobby(): Promise<string> {
     const newGame = new Game();
-    const docRef = await addDoc(collection(this.firestore, 'Games'), newGame.toJson());
+    const docRef = await addDoc(collection(this.firestore, 'Games'), newGame.toJson()); //NOTE: Change here if your Firebase collection names dont fit!
     for (let i = 0; i < newGame.maxPlayers; i++) {
       const player = new Player({
         id: i.toString(),
         name: `Player${i + 1}`,
       });
-      await setDoc(doc(this.firestore, 'Games', docRef.id, 'Players', player.id), player.toJson());
+      await setDoc(doc(this.firestore, 'Games', docRef.id, 'Players', player.id), player.toJson()); //NOTE: Change here if your Firebase collection names dont fit!
     }
     return docRef.id;
   }
@@ -80,7 +81,7 @@ export class FirebaseService {
  * @returns An Observable emitting the Game object with its players.
  */
   getGameObservable(gameId: string) {
-    const gameDocRef = doc(this.firestore, 'Games', gameId);
+    const gameDocRef = doc(this.firestore, 'Games', gameId); //NOTE: Change here if your Firebase collection names dont fit!
     return docData(gameDocRef, { idField: 'id' }) as Observable<GameWithPlayers>;
   }
 
@@ -97,15 +98,15 @@ export class FirebaseService {
  *          If no Player is set for a given slot, the value will be `null`.
  */
   async loadPlayers(gameId: string): Promise<(Player | null)[]> {
-    const snapshot = await getDocs(collection(this.firestore, 'Games', gameId, 'Players'));
-    const gameDocSnap = await getDoc(doc(this.firestore, 'Games', gameId));
+    const snapshot = await getDocs(collection(this.firestore, 'Games', gameId, 'Players')); //NOTE: Change here if your Firebase collection names dont fit!
+    const gameDocSnap = await getDoc(doc(this.firestore, 'Games', gameId)); //NOTE: Change here if your Firebase collection names dont fit!
     const game = gameDocSnap.data() as Game;
     const playersFromDb = snapshot.docs.map(doc => doc.data() as Player);
     const playersArray: (Player | null)[] = [];
     for (let i = 0; i < game.maxPlayers; i++) {
       playersArray[i] = playersFromDb.find(p => p.id === i.toString()) || null;
     }
-    console.log(playersArray)
+    console.log(playersArray) // NOTE: For Debugging, you might wanna remove this.
     return playersArray;
   }
 
@@ -130,7 +131,7 @@ export class FirebaseService {
  *          for empty slots, updating whenever the player data changes in Firestore
  */
   getPlayersObservable(gameId: string, maxPlayers: number): Observable<(Player | null)[]> {
-    const playersRef = collection(this.firestore, 'Games', gameId, 'Players');
+    const playersRef = collection(this.firestore, 'Games', gameId, 'Players'); //NOTE: Change here if your Firebase collection names dont fit!
     return collectionData(playersRef, { idField: 'id' }).pipe(
       map((players: any[]) => {
         const playersArray: (Player | null)[] = [];
@@ -150,7 +151,7 @@ export class FirebaseService {
    * @returns The 'maxPlayers' value from the game data if available, otherwise 0.
    */
   async getMaxPlayers(gameId: string): Promise<number> {
-    const gameDocRef = doc(this.firestore, 'Games', gameId);
+    const gameDocRef = doc(this.firestore, 'Games', gameId); //NOTE: Change here if your Firebase collection names dont fit!
     const gameSnap = await getDoc(gameDocRef);
     if (gameSnap.exists()) {
       const gameData = gameSnap.data() as Game;
@@ -175,7 +176,7 @@ export class FirebaseService {
  * @returns A Promise that resolves once the update is successful.
  */
   updateGameDataField(gameId: string, fieldPath: string, value: any) {
-    const gameDoc = doc(this.firestore, 'Games', gameId);
+    const gameDoc = doc(this.firestore, 'Games', gameId); //NOTE: Change here if your Firebase collection names dont fit!
     return updateDoc(gameDoc, { [fieldPath]: value });
   }
 
@@ -195,7 +196,7 @@ export class FirebaseService {
  * @returns A Promise that resolves when the update is done.
  */
   updatePlayerData(gameId: string, playerId: string, updatedFields: Partial<Player>) {
-    const playerDocRef = doc(this.firestore, 'Games', gameId, 'Players', playerId);
+    const playerDocRef = doc(this.firestore, 'Games', gameId, 'Players', playerId); //NOTE: Change here if your Firebase collection names dont fit!
     return updateDoc(playerDocRef, updatedFields);
   }
 }
